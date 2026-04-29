@@ -117,3 +117,16 @@ fn rejects_nonexistent_directory() {
         .failure()
         .code(1);
 }
+
+#[test]
+fn version_exits_successfully() {
+    let output = Command::new(bin())
+        .arg("--version")
+        .output()
+        .expect("version command should run");
+
+    assert!(output.status.success());
+    assert!(String::from_utf8(output.stdout)
+        .expect("stdout should be utf-8")
+        .contains("__goto_bin"));
+}

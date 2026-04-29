@@ -104,10 +104,7 @@ impl Error for AppError {
 fn main() {
     let cli = match Cli::try_parse() {
         Ok(cli) => cli,
-        Err(err) => {
-            let _ = err.print();
-            process::exit(1);
-        }
+        Err(err) => err.exit(),
     };
 
     if let Err(err) = run(cli) {

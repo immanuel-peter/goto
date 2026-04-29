@@ -5,6 +5,7 @@ REPO="${GOTO_REPO:-immanuel-peter/goto}"
 INSTALL_DIR="${GOTO_INSTALL_DIR:-$HOME/.local/bin}"
 SHELL_DIR="${GOTO_SHELL_DIR:-$HOME/.config/goto}"
 BIN_NAME="__goto_bin"
+TMP_FILE=""
 
 info() {
     printf 'goto: %s\n' "$1"
@@ -156,18 +157,19 @@ warn_if_not_on_path() {
 }
 
 main() {
-    local artifact tmp url
+    local artifact url
     artifact="$(detect_artifact)"
     url="https://github.com/$REPO/releases/latest/download/$artifact"
-    tmp="$(mktemp)"
-    trap 'rm -f "$tmp"' EXIT
+    TMP_FILE="$(mktemp)"
+    trap 'rm -f "${TMP_FILE:-}"' EXIT
 
     mkdir -p "$INSTALL_DIR"
     info "downloading $artifact"
-    download "$url" "$tmp"
+    download "$url" "$TMP_FILE"
 
-    chmod +x "$tmp"
-    mv "$tmp" "$INSTALL_DIR/$BIN_NAME"
+    chmod +x "$TMP_FILE"
+    mv "$TMP_FILE" "$INSTALL_DIR/$BIN_NAME"
+    TMP_FILE=""
     info "installed $BIN_NAME to $INSTALL_DIR"
 
     write_shell_wrapper
