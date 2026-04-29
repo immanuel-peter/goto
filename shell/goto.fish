@@ -15,6 +15,10 @@ function goto
             __goto_bin remove $argv[2]
         case list ls
             __goto_bin list
+        case help -h --help
+            __goto_bin --help
+        case version -V --version
+            __goto_bin --version
         case '*'
             set -l target (__goto_bin resolve $argv[1])
             or return 1

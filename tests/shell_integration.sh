@@ -53,5 +53,11 @@ fi
 goto nonexistent_alias_xyz >/dev/null 2>&1 || true
 assert_dir "bad alias does not change cwd" "$ORIG"
 
+goto --help >/dev/null
+assert_dir "goto --help does not change cwd" "$ORIG"
+
+goto --version >/dev/null
+assert_dir "goto --version does not change cwd" "$ORIG"
+
 printf '\nResults: %s passed, %s failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

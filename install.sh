@@ -8,11 +8,7 @@ BIN_NAME="__goto_bin"
 TMP_FILE=""
 
 info() {
-    printf 'goto: %s\n' "$1"
-}
-
-warn() {
-    printf 'goto: warning: %s\n' "$1" >&2
+    printf '%s\n' "$1"
 }
 
 fail() {
@@ -67,6 +63,12 @@ goto() {
         list|ls)
             __goto_bin list
             ;;
+        help|-h|--help)
+            __goto_bin --help
+            ;;
+        version|-V|--version)
+            __goto_bin --version
+            ;;
         *)
             local target
             target=$(__goto_bin resolve "$1") || return 1
@@ -104,6 +106,10 @@ function goto
             __goto_bin remove $argv[2]
         case list ls
             __goto_bin list
+        case help -h --help
+            __goto_bin --help
+        case version -V --version
+            __goto_bin --version
         case '*'
             set -l target (__goto_bin resolve $argv[1])
             or return 1
@@ -123,37 +129,21 @@ source_line() {
 }
 
 inject_shell_source() {
-    local line found_rc rc
+    local line rc
     line="$(source_line)"
-    found_rc=0
 
     for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile"; do
         if [ ! -f "$rc" ]; then
             continue
         fi
 
-        found_rc=1
-        if grep -qF "$line" "$rc"; then
-            info "shell integration already present in $rc"
-        else
+        if ! grep -qF "$line" "$rc"; then
             {
                 printf '\n# goto shell integration\n'
                 printf '%s\n' "$line"
             } >> "$rc"
-            info "added shell integration to $rc"
         fi
     done
-
-    if [ "$found_rc" -eq 0 ]; then
-        warn "no zsh or bash rc file found; source $SHELL_DIR/goto.sh manually"
-    fi
-}
-
-warn_if_not_on_path() {
-    case ":$PATH:" in
-        *":$INSTALL_DIR:"*) ;;
-        *) warn "$INSTALL_DIR is not on PATH; add it before using goto" ;;
-    esac
 }
 
 main() {
@@ -164,20 +154,19 @@ main() {
     trap 'rm -f "${TMP_FILE:-}"' EXIT
 
     mkdir -p "$INSTALL_DIR"
-    info "downloading $artifact"
+    info "Downloading for ${artifact#goto-}"
     download "$url" "$TMP_FILE"
 
     chmod +x "$TMP_FILE"
     mv "$TMP_FILE" "$INSTALL_DIR/$BIN_NAME"
     TMP_FILE=""
-    info "installed $BIN_NAME to $INSTALL_DIR"
 
     write_shell_wrapper
     write_fish_wrapper
     inject_shell_source
-    warn_if_not_on_path
 
-    info "installation complete; restart your shell or source $SHELL_DIR/goto.sh"
+    info "Installation complete"
+    info "Restart shell or source $SHELL_DIR/goto.sh"
 }
 
 main "$@"

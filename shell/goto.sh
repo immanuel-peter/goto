@@ -14,6 +14,12 @@ goto() {
         list|ls)
             __goto_bin list
             ;;
+        help|-h|--help)
+            __goto_bin --help
+            ;;
+        version|-V|--version)
+            __goto_bin --version
+            ;;
         *)
             local target
             target=$(__goto_bin resolve "$1") || return 1
