@@ -15,6 +15,8 @@ function goto
             __goto_bin remove $argv[2]
         case list ls
             __goto_bin list
+        case upgrade
+            __goto_bin upgrade
         case help -h --help
             __goto_bin --help
         case version -V --version

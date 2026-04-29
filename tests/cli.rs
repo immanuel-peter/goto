@@ -128,5 +128,20 @@ fn version_exits_successfully() {
     assert!(output.status.success());
     assert!(String::from_utf8(output.stdout)
         .expect("stdout should be utf-8")
-        .contains("__goto_bin"));
+        .contains("goto"));
+}
+
+#[test]
+fn help_uses_public_command_name() {
+    let output = Command::new(bin())
+        .arg("--help")
+        .output()
+        .expect("help command should run");
+
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf-8");
+
+    assert!(output.status.success());
+    assert!(stdout.contains("Usage: goto"));
+    assert!(stdout.contains("upgrade"));
+    assert!(!stdout.contains("__goto_bin"));
 }

@@ -25,6 +25,7 @@ goto remove <alias>
 goto rm <alias>
 goto list
 goto ls
+goto upgrade
 goto <alias>
 ```
 

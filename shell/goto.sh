@@ -14,6 +14,9 @@ goto() {
         list|ls)
             __goto_bin list
             ;;
+        upgrade)
+            __goto_bin upgrade
+            ;;
         help|-h|--help)
             __goto_bin --help
             ;;

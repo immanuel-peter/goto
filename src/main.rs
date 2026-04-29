@@ -10,9 +10,13 @@ use std::process;
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 
+const DEFAULT_REPO: &str = "immanuel-peter/goto";
+const DEFAULT_INSTALL_BRANCH: &str = "main";
+
 #[derive(Debug, Parser)]
 #[command(
-    name = "__goto_bin",
+    name = "goto",
+    bin_name = "goto",
     version,
     about = "Resolve explicit directory aliases for the goto shell function."
 )]
@@ -37,6 +41,7 @@ enum Command {
     },
     #[command(alias = "ls")]
     List,
+    Upgrade,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -53,6 +58,7 @@ enum AppError {
     PathIsNotDirectory(PathBuf),
     UnknownAlias(String),
     AliasNotFound(String),
+    UpgradeFailed(Option<i32>),
     Io {
         path: PathBuf,
         source: io::Error,
@@ -77,6 +83,10 @@ impl fmt::Display for AppError {
             }
             Self::UnknownAlias(alias) => write!(f, "goto: unknown alias '{alias}'"),
             Self::AliasNotFound(alias) => write!(f, "goto: no alias '{alias}' found"),
+            Self::UpgradeFailed(Some(code)) => {
+                write!(f, "goto: upgrade failed with exit code {code}")
+            }
+            Self::UpgradeFailed(None) => write!(f, "goto: upgrade failed"),
             Self::Io { path, source } => {
                 write!(f, "goto: I/O error at {}: {source}", path.display())
             }
@@ -149,6 +159,7 @@ fn run(cli: Cli) -> Result<(), AppError> {
             let store = Store::load()?;
             print_aliases(&store);
         }
+        Command::Upgrade => upgrade()?,
     }
 
     Ok(())
@@ -260,6 +271,49 @@ fn print_aliases(store: &Store) {
     }
 }
 
+fn upgrade() -> Result<(), AppError> {
+    let url = install_url();
+    let script = r#"set -euo pipefail
+if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$1" | bash
+elif command -v wget >/dev/null 2>&1; then
+    wget -q "$1" -O - | bash
+else
+    printf 'goto: error: curl or wget is required\n' >&2
+    exit 1
+fi
+"#;
+
+    let status = std::process::Command::new("bash")
+        .arg("-c")
+        .arg(script)
+        .arg("goto-upgrade")
+        .arg(url)
+        .status()
+        .map_err(|source| AppError::Io {
+            path: PathBuf::from("bash"),
+            source,
+        })?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(AppError::UpgradeFailed(status.code()))
+    }
+}
+
+fn install_url() -> String {
+    let repo = env::var("GOTO_REPO").unwrap_or_else(|_| DEFAULT_REPO.to_string());
+    let branch =
+        env::var("GOTO_INSTALL_BRANCH").unwrap_or_else(|_| DEFAULT_INSTALL_BRANCH.to_string());
+
+    install_url_for(&repo, &branch)
+}
+
+fn install_url_for(repo: &str, branch: &str) -> String {
+    format!("https://raw.githubusercontent.com/{repo}/{branch}/install.sh")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -295,5 +349,13 @@ mod tests {
         let home = dirs::home_dir().expect("home dir should be available for tests");
 
         assert_eq!(expand_tilde(Path::new("~")).expect("tilde expands"), home);
+    }
+
+    #[test]
+    fn builds_default_install_url() {
+        assert_eq!(
+            install_url_for(DEFAULT_REPO, DEFAULT_INSTALL_BRANCH),
+            "https://raw.githubusercontent.com/immanuel-peter/goto/main/install.sh"
+        );
     }
 }
