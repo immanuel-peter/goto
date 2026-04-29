@@ -1,0 +1,21 @@
+[package]
+name = "immanuel-goto"
+version = "0.1.0"
+edition = "2021"
+description = "A lightweight CLI for explicit directory aliases."
+license = "MIT"
+repository = "https://github.com/immanuel-peter/goto"
+
+[[bin]]
+name = "__goto_bin"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+dirs = "5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+assert_cmd = "2"
+tempfile = "3"
